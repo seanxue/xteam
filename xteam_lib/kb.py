@@ -46,3 +46,93 @@ def load_kb_from_fixtures(
         source="fixture",
         modules=collected,
     )
+
+
+# --- Role slicing ---
+#
+# Canonical slicing rules (spec §4.3). The table is data, not code,
+# so new roles / fields only require editing _SLICE_RULES below.
+
+_SLICE_RULES: dict[str, dict[str, Any]] = {
+    "architect": {"all": True},
+    "data": {
+        "module_profile_keys": ["tech_stack", "data_stores"],
+        "pitfall_categories": ["schema", "migration"],
+        "convention_keys": ["data"],
+        "adr_categories": ["data"],
+        "keep_incidents_categories": [],
+    },
+    "perf": {
+        "module_profile_keys": ["tech_stack", "capacity"],
+        "pitfall_categories": ["hotspot", "cache"],
+        "convention_keys": [],
+        "adr_categories": [],
+        "keep_incidents_categories": ["performance"],
+    },
+    "security": {
+        "module_profile_keys": ["tech_stack"],
+        "pitfall_categories": ["auth", "data_leak"],
+        "convention_keys": ["security"],
+        "adr_categories": ["security"],
+        "keep_incidents_categories": [],
+    },
+    "qa": {
+        "module_profile_keys": ["tech_stack", "test_strategy"],
+        "pitfall_categories": [],
+        "convention_keys": ["testing"],
+        "adr_categories": [],
+        "keep_incidents_categories": ["regression"],
+    },
+}
+
+
+def slice_for_role(snap: KBSnapshot, role: str) -> dict[str, dict[str, Any]]:
+    if role not in _SLICE_RULES:
+        raise ValueError(f"unknown role: {role!r}")
+    rules = _SLICE_RULES[role]
+    if rules.get("all"):
+        return snap.modules
+
+    result: dict[str, dict[str, Any]] = {}
+    for mod_name, mod_data in snap.modules.items():
+        result[mod_name] = _slice_module(mod_data, rules)
+    return result
+
+
+def _slice_module(mod: dict[str, Any], rules: dict[str, Any]) -> dict[str, Any]:
+    out: dict[str, Any] = {}
+    # module_profile: keep whitelisted keys only
+    profile = mod.get("module_profile", {})
+    kept_profile = {k: v for k, v in profile.items() if k in rules["module_profile_keys"]}
+    if kept_profile:
+        out["module_profile"] = kept_profile
+    # historical_pitfalls: filter by category
+    pfs = [
+        p
+        for p in mod.get("historical_pitfalls", [])
+        if set(p.get("categories", [])) & set(rules["pitfall_categories"])
+    ]
+    if pfs:
+        out["historical_pitfalls"] = pfs
+    # conventions: keep whitelisted subkeys
+    convs = mod.get("conventions", {}) or {}
+    kept_convs = {k: v for k, v in convs.items() if k in rules["convention_keys"]}
+    if kept_convs:
+        out["conventions"] = kept_convs
+    # relevant_adrs: filter by category
+    adrs = [
+        a
+        for a in mod.get("relevant_adrs", [])
+        if set(a.get("categories", [])) & set(rules["adr_categories"])
+    ]
+    if adrs:
+        out["relevant_adrs"] = adrs
+    # recent_incidents: filter by category
+    incs = [
+        i
+        for i in mod.get("recent_incidents", [])
+        if set(i.get("categories", [])) & set(rules["keep_incidents_categories"])
+    ]
+    if incs:
+        out["recent_incidents"] = incs
+    return out
