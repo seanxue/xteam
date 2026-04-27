@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "xTeam PRD",
+  "description": "Structured PRD format accepted by /xteam-design. v1 is frontmatter YAML + Markdown body. This schema validates the parsed frontmatter.",
+  "type": "object",
+  "required": [
+    "title",
+    "background",
+    "goal",
+    "user_scenarios",
+    "features",
+    "metrics",
+    "out_of_scope",
+    "involved_modules"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "background": { "type": "string", "minLength": 20 },
+    "goal": { "type": "string", "minLength": 10 },
+    "user_scenarios": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 5 }
+    },
+    "features": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "summary"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^F[0-9]+$" },
+          "summary": { "type": "string", "minLength": 5 },
+          "priority": {
+            "type": "string",
+            "enum": ["P0", "P1", "P2"]
+          }
+        }
+      }
+    },
+    "metrics": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 3 }
+    },
+    "out_of_scope": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "involved_modules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "kind"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "kind": { "type": "string", "enum": ["legacy", "new", "shared"] },
+          "touches_core_feature": { "type": "boolean" }
+        }
+      }
+    },
+    "business_type": {
+      "type": "string",
+      "enum": ["content_social", "transaction_payment", "b_enterprise", "mixed"],
+      "description": "Used to gate content_safety / cache_strategy / hotspot must-answer items."
+    }
+  }
+}
