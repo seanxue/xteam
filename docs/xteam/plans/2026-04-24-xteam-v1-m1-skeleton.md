@@ -1406,7 +1406,7 @@ profile keys, pitfall categories, conventions, ADRs, incidents."
 - [ ] **Step 1: Write the canonical must-answer list**
 
 `skills/xteam-design/must-answer-items.md`:
-```markdown
+`````markdown
 # xTeam Must-Answer Items (canonical list)
 
 > This file is the single source of truth for must-answer items.
@@ -1476,7 +1476,7 @@ items:
 | `business_type_content_social` | PRD.business_type == "content_social" |
 
 Round 2 结束时,所有 `applicable=true` 的项必须是 `draft` 或 `n/a`——否则进 P5 人兜底。
-```
+`````
 
 - [ ] **Step 2: Commit**
 
@@ -1886,7 +1886,7 @@ tell 'no snapshot yet' (FileNotFoundError) from 'snapshot broken'."
 - [ ] **Step 2: Write the architect agent prompt**
 
 `agents/xteam-agent-architect.md`:
-```markdown
+`````markdown
 ---
 name: xteam-agent-architect
 description: |
@@ -1983,7 +1983,7 @@ For now, if invoked with `mode: merge`, respond with:
 {"error": "merge mode not implemented in M1"}
 ```
 ````
-```
+`````
 
 - [ ] **Step 3: Validate schema file is well-formed**
 
