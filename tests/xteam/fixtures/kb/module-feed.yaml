@@ -1,0 +1,13 @@
+module_profile:
+  tech_stack: "Go 1.22, Kafka, ClickHouse"
+  data_stores:
+    - "ClickHouse: user_feed_events (append-only)"
+  capacity: "peak ~100k events/s"
+  test_strategy: "replay golden event streams"
+historical_pitfalls: []
+conventions: {}
+recent_incidents:
+  - id: I-2025-09
+    categories: ["performance"]
+    summary: "ClickHouse merge lag during promo event."
+relevant_adrs: []

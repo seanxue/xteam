@@ -1,0 +1,26 @@
+module_profile:
+  tech_stack: "Go 1.22 + gRPC, MySQL 8, Redis 7"
+  data_stores:
+    - "MySQL: comments (sharded by post_id)"
+    - "Redis: comment:{post_id} list cache, TTL 10min"
+  capacity: "peak ~50k QPS read / ~2k write"
+  test_strategy: "integration tests via docker-compose; load tests nightly"
+historical_pitfalls:
+  - id: P-2024-07
+    categories: ["schema", "migration"]
+    summary: "Adding user_id index without online DDL caused 4min lag spike."
+  - id: P-2025-02
+    categories: ["hotspot", "cache"]
+    summary: "Celebrity thread melted Redis shard; added local cache."
+conventions:
+  data:
+    - "All comment tables use soft-delete (deleted_at)."
+  security:
+    - "PII never logged; user_id hashed in analytics."
+  testing:
+    - "Every new API gets a contract test in tests/contract/."
+recent_incidents: []
+relevant_adrs:
+  - id: ADR-0031
+    title: "Comment shard key chose post_id over user_id"
+    categories: ["data"]
