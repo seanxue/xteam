@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "xTeam KB Snapshot",
+  "description": "Session KB snapshot — result of P1 MCP pre-fetch, or M1 fixture load. Immutable within a session; temp layer overlays are kept separately.",
+  "type": "object",
+  "required": ["fetched_at", "modules"],
+  "additionalProperties": false,
+  "properties": {
+    "fetched_at": { "type": "string", "format": "date-time" },
+    "source": {
+      "type": "string",
+      "enum": ["mcp", "fixture"],
+      "description": "M1 uses fixture; M2 switches to mcp."
+    },
+    "modules": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["module_profile"],
+        "additionalProperties": false,
+        "properties": {
+          "module_profile": {
+            "type": "object",
+            "required": ["tech_stack"],
+            "additionalProperties": true,
+            "properties": {
+              "tech_stack": { "type": "string" },
+              "data_stores": { "type": "array", "items": { "type": "string" } },
+              "capacity": { "type": "string" },
+              "test_strategy": { "type": "string" }
+            }
+          },
+          "recent_incidents": {
+            "type": "array",
+            "items": { "type": "object", "additionalProperties": true }
+          },
+          "relevant_adrs": {
+            "type": "array",
+            "items": { "type": "object", "additionalProperties": true }
+          },
+          "historical_pitfalls": {
+            "type": "array",
+            "items": { "type": "object", "additionalProperties": true }
+          },
+          "conventions": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      }
+    }
+  }
+}
