@@ -1,0 +1,23 @@
+[project]
+name = "xteam"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "jsonschema>=4.20",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-mock>=3.12",
+]
+
+[tool.setuptools.packages.find]
+include = ["xteam_lib*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/xteam"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
