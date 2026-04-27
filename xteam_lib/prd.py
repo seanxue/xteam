@@ -17,6 +17,9 @@ from typing import Any
 
 import yaml
 
+from xteam_lib.errors import PRDInvalid
+from xteam_lib.schema_validate import validate_against
+
 
 @dataclass(frozen=True)
 class PRD:
@@ -40,3 +43,33 @@ def parse_prd(path: Path) -> PRD:
     except yaml.YAMLError as e:
         raise ValueError(f"invalid YAML frontmatter in {path}: {e}") from e
     return PRD(frontmatter=fm, body=body.lstrip(), source_path=path)
+
+
+def validate_prd(prd: PRD) -> None:
+    """Schema-validate plus heuristic 'is this really a PRD?' check.
+
+    Raises PRDInvalid with actionable messages for the user.
+
+    Order of checks:
+    1. Heuristic first: if features/user_scenarios are *present but empty*,
+       give a human-friendly "idea not PRD" error rather than a dry schema
+       message.  Missing fields are intentionally left for schema to catch
+       (step 2) so callers get a complete list of what's absent.
+    2. Schema validation: reports all missing/invalid fields.
+    """
+    fm = prd.frontmatter
+    # Heuristic: fields present but vacuous → treat as idea, not spec.
+    # (missing fields fall through to schema validation below)
+    if ("features" in fm and not fm["features"]) or (
+        "user_scenarios" in fm and not fm["user_scenarios"]
+    ):
+        raise PRDInvalid(
+            "PRD appears to be an idea, not a shippable spec "
+            "(features or user_scenarios empty). "
+            "Use superpowers:brainstorming to shape it first."
+        )
+
+    try:
+        validate_against(prd.frontmatter, "prd")
+    except ValueError as e:
+        raise PRDInvalid(str(e)) from e
