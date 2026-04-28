@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "Architect agent · draft mode output",
+  "description": "Structured return from architect subagent when mode=draft (Phase 2).",
+  "type": "object",
+  "required": ["mode", "tech_design_markdown", "must_answer_updates"],
+  "additionalProperties": false,
+  "properties": {
+    "mode": { "const": "draft" },
+    "tech_design_markdown": { "type": "string", "minLength": 100 },
+    "must_answer_updates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "status"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "status": { "type": "string", "enum": ["missing", "draft", "n/a"] }
+        }
+      }
+    },
+    "open_questions_for_human": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}
