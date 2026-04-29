@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "xTeam KB diff",
+  "description": "Candidate updates to write back to the permanent KB after human review. Spec §4.4. v1 supports 3 types: new_adr, new_pitfall, update_convention.",
+  "type": "object",
+  "required": ["session_id", "candidate_updates"],
+  "additionalProperties": false,
+  "properties": {
+    "session_id": { "type": "string" },
+    "candidate_updates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "scope", "summary", "rationale", "source"],
+        "additionalProperties": false,
+        "properties": {
+          "type": { "type": "string", "enum": ["new_adr", "new_pitfall", "update_convention"] },
+          "scope": { "type": "string", "minLength": 1, "description": "e.g. module/comment" },
+          "summary": { "type": "string", "minLength": 10 },
+          "rationale": { "type": "string", "minLength": 10 },
+          "source": { "type": "string", "minLength": 5, "description": "e.g. P3.5 人补充 + P4 architect 裁定" },
+          "path": { "type": "string", "description": "For update_convention: dotted path like conventions.cache.default_ttl" },
+          "before": { "type": "string", "description": "For update_convention: old value" },
+          "after": { "type": "string", "description": "For update_convention: new value" }
+        }
+      }
+    }
+  }
+}
