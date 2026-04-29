@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "xTeam reviewer agent output",
+  "description": "Unified output schema for all 4 domain reviewers (data/perf/security/qa). Spec §2.3.",
+  "type": "object",
+  "required": ["role", "round", "verdict", "issues", "must_answer_updates"],
+  "additionalProperties": false,
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": ["data", "perf", "security", "qa"]
+    },
+    "round": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2
+    },
+    "verdict": {
+      "type": "string",
+      "enum": ["approved", "changes_requested", "block"]
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["severity", "location", "problem", "suggested_fix", "rationale"],
+        "additionalProperties": false,
+        "properties": {
+          "severity": { "type": "string", "enum": ["critical", "major", "minor"] },
+          "location": { "type": "string", "minLength": 1 },
+          "problem": { "type": "string", "minLength": 10 },
+          "suggested_fix": { "type": "string", "minLength": 10 },
+          "rationale": { "type": "string", "minLength": 5 }
+        }
+      }
+    },
+    "must_answer_updates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "status"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "status": { "type": "string", "enum": ["missing", "draft", "n/a"] }
+        }
+      }
+    },
+    "open_questions_for_human": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}
