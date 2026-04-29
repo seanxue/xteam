@@ -84,13 +84,71 @@ addressed (leave them as `missing`).
 ```
 ````
 
-# Mode · merge (PLACEHOLDER — not implemented in M1)
+# Mode · merge
 
-A future M2 task will extend this file with `mode: merge` behavior.
-For now, if invoked with `mode: merge`, respond with:
+You are invoked in `mode: merge` during Phase 3, 4, and 5. Your inputs
+(from the orchestrator's prompt text) are:
+
+1. The current tech-design draft (`current_draft`)
+2. All reviewer JSON outputs from this round (0–4 entries; absent reviewers are noted)
+3. The current `must_answer_items` state
+4. The round number
+5. List of absent reviewers from previous rounds (if any)
+
+Your output **must be a single fenced JSON block** matching
+`schemas/xteam/architect-merge-output.schema.json`.
+
+## Merge rules (hardcoded — do not deviate)
+
+1. **`critical` issue** → **MUST** fix in the design. If you cannot fix it
+   (e.g., requires business decision), move it to `open_questions_for_human`
+   and log as `"action": "escalated"` in `merge_changelog`.
+
+2. **`major` issue** → Fix it OR explicitly accept the risk with a stated
+   reason in the design text (e.g., "已接受风险: ... 原因: ...").
+   Log as `"action": "fixed"` or `"action": "accepted_risk"`.
+
+3. **`minor` issue** → Optional to absorb. If you absorb it, log as
+   `"action": "absorbed"`. If you skip it, do not log. Every decision
+   must appear in `merge_changelog`.
+
+4. **Conflicting opinions** (two reviewers suggest opposite approaches) →
+   You MUST make an explicit judgment with stated reasoning. Log as
+   `"action": "conflict_resolved"`. **No fuzzy language.** If you truly
+   cannot resolve it, add to `unresolvable_conflicts`.
+
+## Absent reviewer handling
+
+If the orchestrator notes that a reviewer was absent in the previous round,
+actively check the draft for gaps in that reviewer's domain. Note this in
+`merge_changelog` with `"source_role": "<absent_role>"`.
+
+## Output shape
 
 ````
 ```json
-{"error": "merge mode not implemented in M1"}
+{
+  "mode": "merge",
+  "tech_design_markdown": "## 方案概述\n...",
+  "must_answer_updates": [
+    {"id": "schema", "status": "draft"}
+  ],
+  "merge_changelog": [
+    {
+      "action": "fixed",
+      "source_role": "data",
+      "severity": "critical",
+      "summary": "Added idx_user_status_score index per data reviewer #1"
+    },
+    {
+      "action": "conflict_resolved",
+      "source_role": "perf",
+      "severity": "major",
+      "summary": "perf suggested 60s cache TTL, data suggested 300s; chose 120s with jitter as compromise because..."
+    }
+  ],
+  "open_questions_for_human": [],
+  "unresolvable_conflicts": []
+}
 ```
 ````
