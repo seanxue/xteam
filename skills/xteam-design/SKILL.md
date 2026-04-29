@@ -1,10 +1,11 @@
 ---
 name: xteam-design
 description: |
-  M1 scope — Phase 0 PRD intake, Phase 1 KB fetch (fixture in M1, MCP in M2),
-  Phase 2 architect draft. Terminates with a v0 tech-design markdown file
-  and a snapshot. Rounds / mid-check / converge / outputs / writeback are
-  out of scope for M1 (see docs/xteam/plans/ for M2 & M3).
+  xTeam design roundtable orchestrator. Phases 0-6:
+  P0 PRD intake, P1 KB fetch, P2 architect draft,
+  P3 Round 1 (4 reviewers + merge), P3.5 Mid-check,
+  P4 Round 2, P5 Converge, P6 Output.
+  P7 KB writeback is via /xteam-writeback command.
 ---
 
 # xTeam Design · M1 Skeleton Walkthrough
@@ -179,17 +180,183 @@ don't provide one.
    > Must-answer state: N applicable, M draft, K missing.
    > Rounds of review, mid-check, and final plan.md are M2/M3.
 
+### Phase 3 — Round 1
+
+1. For each of the 4 reviewer roles (data, perf, security, qa), compose
+   a prompt including:
+   - Full PRD frontmatter + body
+   - KB snapshot **sliced for role** via `slice_for_role(snap, role)`
+   - Current draft (v0 from Phase 2)
+   - `round: 1`
+   - Must-answer state (applicable items)
+
+2. Dispatch all 4 reviewers **in parallel** via the Agent tool with
+   `subagent_type: xteam-agent-<role>`. Each should follow the rules
+   in `agents/xteam-agent-<role>.md`.
+
+3. Collect results. For each reviewer:
+   - If valid JSON matching `reviewer-output.schema.json`: keep
+   - If invalid: re-dispatch once with error appended
+   - If second attempt fails: mark reviewer as **absent** for this round
+
+4. Dispatch architect in **merge mode**:
+   - Input: v0 draft + all reviewer JSONs from step 3
+   - Absent reviewers noted in prompt
+   - Instruction: `mode: merge` per `agents/xteam-agent-architect.md`
+
+5. Validate merge output against `architect-merge-output.schema.json`.
+   On failure: re-dispatch once. If second attempt fails: snapshot + exit.
+
+6. The merge produces v1 draft. Update snapshot:
+
+   ```bash
+   source .venv/bin/activate && python -c "
+   from xteam_lib.roundtable import merge_must_answer_updates
+   import json
+   # merge must_answer_updates from all reviewer outputs + architect merge
+   all_updates = [<reviewer1_updates>, <reviewer2_updates>, ..., <merge_updates>]
+   updated_state = merge_must_answer_updates(<current_state>, all_updates)
+   print(json.dumps(updated_state, ensure_ascii=False, indent=2))
+   "
+   ```
+
+   Save snapshot with phase='P3-complete', drafts['v1'], rounds['round_1'].
+
+### Phase 3.5 — Mid-check
+
+1. Evaluate midcheck thresholds:
+
+   ```bash
+   source .venv/bin/activate && python -c "
+   from xteam_lib.roundtable import evaluate_midcheck
+   import json
+   result = evaluate_midcheck(
+       reviewer_outputs=<round 1 reviewer JSONs>,
+       merge_output=<architect merge output>,
+       must_answer_state=<current must_answer_state>,
+   )
+   print(json.dumps({'triggered': result.triggered, 'signals': result.signals}))
+   "
+   ```
+
+2. If `triggered=false`: skip to Phase 4.
+
+3. If `triggered=true`:
+   - Collect all questions: reviewer open_questions + merge open_questions
+   - Present to user in a batch: "以下问题需要你的输入:"
+   - List each question numbered
+   - Wait for user responses
+   - If user does not respond: save snapshot, exit, suggest `/xteam-resume`
+
+4. Record human responses and merge into KB temp layer:
+
+   ```bash
+   source .venv/bin/activate && python -c "
+   from xteam_lib.kb import merge_temp_layer, load_kb_from_fixtures
+   # merged_kb = merge_temp_layer(kb_snap, human_responses)
+   # This merged_kb is used for Round 2 dispatch
+   "
+   ```
+
+5. Update snapshot with human_responses and phase='P3.5-complete'.
+
+### Phase 4 — Round 2
+
+1. Same structure as Phase 3, but:
+   - Input base is **v1** (not v0)
+   - KB includes **temp layer from P3.5** (if triggered)
+   - Must-answer state reflects Round 1 updates
+   - Note absent reviewers from Round 1 in architect merge prompt:
+     "上轮 `<role>` 缺席,请补查该维度"
+
+2. Dispatch all 4 reviewers in parallel with `round: 2`.
+
+3. Collect, validate, handle failures (same as P3).
+
+4. Dispatch architect merge → v2.
+
+5. Update snapshot: phase='P4-complete', drafts['v2'], rounds['round_2'].
+
+### Phase 5 — Converge
+
+1. Check for unresolved items after Round 2:
+   - Must-answer items still `missing` with `applicable=true`
+   - Remaining open_questions_for_human
+   - Absent reviewers from Round 2
+
+2. If no unresolved items: skip to Phase 6 with v_final = v2.
+
+3. If unresolved items exist:
+   - Count total questions for human
+   - If > 20: exit with "PRD 尚不成熟,建议先用 brainstorming 完善"
+   - Present unresolved items to user
+   - Wait for responses
+   - Dispatch architect merge (mode=merge) with v2 + human responses → v_final
+
+4. Update snapshot: phase='P5-complete', drafts['v_final'].
+
+### Phase 6 — Output
+
+1. Write tech-design.md:
+   - Path: `<prd-dir>/../design/<prd-basename>.tech-design.md`
+   - Content: v_final tech_design_markdown
+
+2. Dispatch plan-composer agent:
+   - Input: v_final + PRD frontmatter
+   - Subagent: `xteam-agent-plan-composer`
+   - Output: plan.md content
+
+3. Write plan.md:
+   - Path: `<prd-dir>/../design/<prd-basename>.plan.md`
+
+4. Generate kb-diff:
+
+   ```bash
+   source .venv/bin/activate && python -c "
+   from xteam_lib.kb_diff import extract_kb_diff_candidates
+   import json
+   diff = extract_kb_diff_candidates(
+       session_id='<session-id>',
+       merge_changelogs=[<round1_changelog>, <round2_changelog>],
+       human_responses=<all human responses>,
+   )
+   print(json.dumps(diff, ensure_ascii=False, indent=2))
+   "
+   ```
+
+5. Write kb-diff.md:
+   - Path: `<prd-dir>/../design/<prd-basename>.kb-diff.md`
+   - Format as human-readable YAML block
+
+6. Update snapshot: phase='P6-complete'.
+
+7. Tell the user:
+   > 圆桌完成。产物:
+   > - 技术方案: `<tech-design path>`
+   > - 任务拆解: `<plan path>`
+   > - KB 更新候选: `<kb-diff path>` (需人审后执行 `/xteam-writeback`)
+   >
+   > Must-answer: N applicable, M draft, K n/a.
+   > Open questions resolved: X. Human interventions: Y.
+
 ## Files referenced
 
 - `skills/xteam-design/must-answer-items.md` — canonical must-answer list
 - `agents/xteam-agent-architect.md` — subagent prompt
 - `schemas/xteam/*` — all I/O schemas
 - `xteam_lib/` — deterministic helpers
+- `skills/xteam-design/midcheck-thresholds.md` — P3.5 threshold config
+- `skills/xteam-design/failure-handling.md` — failure disposition rules
+- `agents/xteam-agent-data.md` — data reviewer
+- `agents/xteam-agent-perf.md` — perf reviewer
+- `agents/xteam-agent-security.md` — security reviewer
+- `agents/xteam-agent-qa.md` — qa reviewer
+- `agents/xteam-agent-plan-composer.md` — P6 format converter
 
-## Not in M1
+## Not in M2
 
-- Reviewer agents (data/perf/security/qa) — M2
-- Round 1/2, P3.5, P5 — M2
-- plan-composer + plan.md — M2
-- kb-diff + P7 writeback — M3
-- Resume / metrics / golden test suite — M3
+- Live MCP KB (uses fixtures) — M3
+- P7 KB writeback execution — M3
+- Resume from snapshot — M3
+- Metrics dashboard + golden test suite — M3
+- `/xteam-record-final` metrics registration — M3
