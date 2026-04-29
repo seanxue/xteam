@@ -1,0 +1,28 @@
+{
+  "role": "data",
+  "round": 1,
+  "verdict": "changes_requested",
+  "issues": [
+    {
+      "severity": "critical",
+      "location": "§ 数据模型",
+      "problem": "rec_candidates 表缺少 user_id+content_id 唯一索引,可能导致同一候选重复写入",
+      "suggested_fix": "增加 UNIQUE(user_id, content_id) 约束或 INSERT ... ON DUPLICATE KEY UPDATE",
+      "rationale": "KB.historical_pitfalls#P-2024-07 明确过缺少唯一索引导致脏数据"
+    },
+    {
+      "severity": "major",
+      "location": "§ 数据模型",
+      "problem": "rec_interactions 表预计 10M rows/month 但未指定分区策略",
+      "suggested_fix": "按 created_at 月分区,配合 90 天归档策略",
+      "rationale": "*(KB: 无先例)*"
+    }
+  ],
+  "must_answer_updates": [
+    {"id": "schema", "status": "draft"},
+    {"id": "migration", "status": "draft"}
+  ],
+  "open_questions_for_human": [
+    "冷热分离阈值建议 90 天,但需业务确认"
+  ]
+}

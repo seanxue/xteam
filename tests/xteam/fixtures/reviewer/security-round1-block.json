@@ -1,0 +1,27 @@
+{
+  "role": "security",
+  "round": 1,
+  "verdict": "block",
+  "issues": [
+    {
+      "severity": "critical",
+      "location": "§ 接口契约",
+      "problem": "GET /api/v1/rec/widget 缺少鉴权说明,可能暴露用户推荐偏好",
+      "suggested_fix": "明确要求 Bearer token + 权限校验,添加到接口契约表",
+      "rationale": "KB.conventions.security: PII never logged; user_id hashed in analytics — 推荐偏好属 PII 范畴"
+    },
+    {
+      "severity": "major",
+      "location": "§ 内容安全",
+      "problem": "举报联动机制未说明处理时效和升级路径",
+      "suggested_fix": "明确: dismiss+inappropriate → 异步 MQ → 24h 内复审,超时升级人工",
+      "rationale": "*(KB: 无先例)*"
+    }
+  ],
+  "must_answer_updates": [
+    {"id": "content_safety", "status": "draft"}
+  ],
+  "open_questions_for_human": [
+    "推荐理由(reason 字段)是否属于用户敏感数据?是否需脱敏?"
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "role": "qa",
+  "round": 1,
+  "verdict": "changes_requested",
+  "issues": [
+    {
+      "severity": "major",
+      "location": "§ 失败处理",
+      "problem": "Redis 不可用时降级到 MySQL 直查,但未说明 MySQL 查询的超时和连接池配置",
+      "suggested_fix": "明确降级模式下 MySQL 查询超时 500ms, max_connections 独立配置避免影响主库",
+      "rationale": "*(KB: 无先例)*"
+    },
+    {
+      "severity": "minor",
+      "location": "§ 迁移与灰度",
+      "problem": "灰度回滚触发条件缺少候选生成服务自身的健康检查",
+      "suggested_fix": "增加: 候选生成服务 health check 连续 3 次失败 → 暂停灰度放量",
+      "rationale": "*(KB: 无先例)*"
+    }
+  ],
+  "must_answer_updates": [
+    {"id": "failure_modes", "status": "draft"},
+    {"id": "rollback", "status": "draft"}
+  ],
+  "open_questions_for_human": [
+    "是否需要准备预案演练脚本?还是第一版仅文档级别即可?",
+    "集成测试覆盖范围:仅 API → Cache → DB 链路,还是包含候选生成定时任务?"
+  ]
+}
