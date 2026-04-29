@@ -19,8 +19,9 @@ from xteam_lib.errors import KBUnreachable
 @dataclass(frozen=True)
 class KBSnapshot:
     fetched_at: str
-    source: str  # "fixture" | "mcp"
+    source: str  # "fixture" | "mcp" | "fixture+temp"
     modules: dict[str, dict[str, Any]] = field(default_factory=dict)
+    temp_layer: list[dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -45,6 +46,30 @@ def load_kb_from_fixtures(
         fetched_at=_now_iso(),
         source="fixture",
         modules=collected,
+    )
+
+
+def merge_temp_layer(
+    snap: KBSnapshot, human_responses: list[dict[str, Any]]
+) -> KBSnapshot:
+    """Overlay P3.5 human responses onto a KB snapshot.
+
+    Returns a new KBSnapshot with temp_layer set. The original
+    snapshot's modules are not mutated. The temp_layer is session-only
+    and never written to permanent KB (that's P7's job). Spec §4.1.
+    """
+    if not human_responses:
+        return KBSnapshot(
+            fetched_at=snap.fetched_at,
+            source=snap.source,
+            modules=dict(snap.modules),
+            temp_layer=[],
+        )
+    return KBSnapshot(
+        fetched_at=snap.fetched_at,
+        source=f"{snap.source}+temp",
+        modules=dict(snap.modules),
+        temp_layer=list(human_responses),
     )
 
 

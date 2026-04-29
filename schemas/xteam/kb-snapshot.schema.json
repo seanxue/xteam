@@ -9,8 +9,14 @@
     "fetched_at": { "type": "string", "format": "date-time" },
     "source": {
       "type": "string",
-      "enum": ["mcp", "fixture"],
-      "description": "M1 uses fixture; M2 switches to mcp."
+      "enum": ["mcp", "fixture", "fixture+temp", "mcp+temp"],
+      "description": "M1 uses fixture; M2 switches to mcp. +temp suffix when P3.5 human responses are overlaid."
+    },
+    "temp_layer": {
+      "type": "array",
+      "items": { "type": "object", "additionalProperties": true },
+      "default": [],
+      "description": "Session-only P3.5 human responses. Never written to permanent KB."
     },
     "modules": {
       "type": "object",
