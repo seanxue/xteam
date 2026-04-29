@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "Architect agent · merge mode output",
+  "description": "Structured return from architect subagent when mode=merge (Phase 3/4/5). Spec §2.4.",
+  "type": "object",
+  "required": ["mode", "tech_design_markdown", "must_answer_updates", "merge_changelog"],
+  "additionalProperties": false,
+  "properties": {
+    "mode": { "const": "merge" },
+    "tech_design_markdown": { "type": "string", "minLength": 100 },
+    "must_answer_updates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "status"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "status": { "type": "string", "enum": ["missing", "draft", "n/a"] }
+        }
+      }
+    },
+    "merge_changelog": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["action", "source_role", "severity", "summary"],
+        "additionalProperties": false,
+        "properties": {
+          "action": { "type": "string", "enum": ["fixed", "accepted_risk", "absorbed", "escalated", "conflict_resolved"] },
+          "source_role": { "type": "string" },
+          "severity": { "type": "string", "enum": ["critical", "major", "minor"] },
+          "summary": { "type": "string", "minLength": 10 }
+        }
+      }
+    },
+    "open_questions_for_human": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "unresolvable_conflicts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["roles", "description"],
+        "additionalProperties": false,
+        "properties": {
+          "roles": { "type": "array", "items": { "type": "string" }, "minItems": 2 },
+          "description": { "type": "string", "minLength": 10 }
+        }
+      }
+    }
+  }
+}
