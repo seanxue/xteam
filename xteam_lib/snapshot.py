@@ -24,6 +24,7 @@ class Snapshot:
     prd_path: str
     kb_snapshot: dict[str, Any]
     drafts: dict[str, str] = field(default_factory=dict)
+    rounds: dict[str, dict[str, Any]] = field(default_factory=dict)
     must_answer_state: dict[str, dict[str, Any]] = field(default_factory=dict)
     open_questions_for_human: list[str] = field(default_factory=list)
     human_responses: list[dict[str, Any]] = field(default_factory=list)
