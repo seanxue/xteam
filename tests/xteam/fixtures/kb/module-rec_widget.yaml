@@ -1,0 +1,29 @@
+module_profile:
+  name: rec_widget
+  tech_stack:
+    - Go
+    - Redis
+    - MySQL
+  data_stores:
+    - name: rec_widget_db
+      type: MySQL
+      purpose: Store recommendation candidates and user interaction logs
+    - name: rec_cache
+      type: Redis
+      purpose: Cache hot recommendation results
+  capacity:
+    p99_latency_ms: 50
+    peak_qps: 10000
+    data_volume: "initial ~0, expected 10M rows/month growth"
+  test_strategy:
+    unit: true
+    integration: true
+    e2e: false
+pitfalls: []
+conventions:
+  - key: api_style
+    value: RESTful JSON over HTTP
+  - key: error_code_format
+    value: "REC_XXXX"
+ADRs: []
+incidents: []
