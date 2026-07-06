@@ -1,6 +1,7 @@
 .worktrees/
 .private-journal/
 .claude/
+.superpowers/
 .DS_Store
 node_modules/
 inspo
@@ -15,3 +16,8 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 *.egg-info/
+
+# Eval harness lives in its own repository, cloned into evals/ for local
+# development (see CLAUDE.md / README.md). It is not part of the published
+# plugin, so the whole directory is ignored here.
+evals/
